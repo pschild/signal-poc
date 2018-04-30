@@ -17,39 +17,69 @@ SignalProtocolStore.prototype = {
     put: function (key, value) {
         if (key === undefined || value === undefined || key === null || value === null)
             throw new Error("Tried to store undefined/null");
-        if (typeof value === 'object') {
-            if (value instanceof ArrayBuffer) {
-                value = signalUtil.arrayBufferToBase64(value);
-            } else {
-                Object.keys(value).forEach(key => {
-                    if (value[key] instanceof ArrayBuffer) {
-                        value[key] = signalUtil.arrayBufferToBase64(value[key])
-                    }
-                });
 
-                value = JSON.stringify(value);
-            }
+        let valueToSave;
+        if (key.startsWith(`25519KeypreKey`)) { // e.g. 25519KeypreKey0
+            valueToSave = JSON.stringify({
+                pubKey: signalUtil.arrayBufferToBase64(value.pubKey),
+                privKey: signalUtil.arrayBufferToBase64(value.privKey)
+            });
+        } else if (key.startsWith(`25519KeysignedKey`)) { // e.g. 25519KeysignedKey1203
+            valueToSave = JSON.stringify({
+                pubKey: signalUtil.arrayBufferToBase64(value.pubKey),
+                privKey: signalUtil.arrayBufferToBase64(value.privKey)
+            });
+        } else if (key === `identityKey`) { // identityKey
+            valueToSave = JSON.stringify({
+                pubKey: signalUtil.arrayBufferToBase64(value.pubKey),
+                privKey: signalUtil.arrayBufferToBase64(value.privKey)
+            });
+        } else if (key.startsWith(`identityKey`)) { // e.g. identityKeyalice
+            valueToSave = signalUtil.arrayBufferToBase64(value);
+        } else if (key === `registrationId`) { // registrationId
+            valueToSave = value;
+        } else if (key.startsWith(`session`)) { // e.g. sessionalice.0
+            valueToSave = value;
+        } else {
+            throw new Error(`Tried to set untreated key ${key}`);
         }
 
-        console.log(`set ${key}=${value}`);
-        this.store.setItem(key, value);
+        this.store.setItem(key, valueToSave);
     },
     get: function (key, defaultValue) {
         if (key === null || key === undefined)
             throw new Error("Tried to get value for undefined/null key");
         if (key in this.store) {
-            // return signalUtil.bufferise(this.store.getItem(key));
             let item = this.store.getItem(key);
-            console.log(`get ${key}=${item}`);
-            try {
+            let valueToReturn;
+            if (key.startsWith(`25519KeypreKey`)) { // e.g. 25519KeypreKey0
                 item = JSON.parse(item);
-                Object.keys(item).forEach(key => {
-                    item[key] = signalUtil.base64ToArrayBuffer(item[key]);
-                });
-            } catch(e) {
-
+                valueToReturn = {
+                    pubKey: signalUtil.base64ToArrayBuffer(item.pubKey),
+                    privKey: signalUtil.base64ToArrayBuffer(item.privKey)
+                };
+            } else if (key.startsWith(`25519KeysignedKey`)) { // e.g. 25519KeysignedKey1203
+                item = JSON.parse(item);
+                valueToReturn = {
+                    pubKey: signalUtil.base64ToArrayBuffer(item.pubKey),
+                    privKey: signalUtil.base64ToArrayBuffer(item.privKey)
+                };
+            } else if (key === `identityKey`) { // identityKey
+                item = JSON.parse(item);
+                valueToReturn = {
+                    pubKey: signalUtil.base64ToArrayBuffer(item.pubKey),
+                    privKey: signalUtil.base64ToArrayBuffer(item.privKey)
+                };
+            } else if (key.startsWith(`identityKey`)) { // e.g. identityKeyalice
+                valueToReturn = signalUtil.base64ToArrayBuffer(item);
+            } else if (key === `registrationId`) { // registrationId
+                valueToReturn = Number.parseInt(item);
+            } else if (key.startsWith(`session`)) { // e.g. sessionalice.0
+                valueToReturn = item;
+            } else {
+                throw new Error(`Tried to get untreated key ${key}`);
             }
-            return item;
+            return valueToReturn;
         } else {
             return defaultValue;
         }
@@ -57,7 +87,7 @@ SignalProtocolStore.prototype = {
     remove: function (key) {
         if (key === null || key === undefined)
             throw new Error("Tried to remove value for undefined/null key");
-        delete this.store.removeItem(key);
+        this.store.removeItem(key);
     },
 
     isTrustedIdentity: function (identifier, identityKey, direction) {
@@ -83,6 +113,10 @@ SignalProtocolStore.prototype = {
             throw new Error("Tried to put identity key for undefined/null key");
 
         var address = new libsignal.SignalProtocolAddress.fromString(identifier);
+
+        if (!(identityKey instanceof ArrayBuffer)) {
+            identityKey = signalUtil.toArrayBuffer(identityKey);
+        }
 
         var existing = this.get('identityKey' + address.getName());
         this.put('identityKey' + address.getName(), identityKey)
@@ -137,7 +171,7 @@ SignalProtocolStore.prototype = {
     removeAllSessions: function (identifier) {
         for (var id in this.store) {
             if (id.startsWith('session' + identifier)) {
-                delete this.store[id];
+                this.remove(id);
             }
         }
         return Promise.resolve();

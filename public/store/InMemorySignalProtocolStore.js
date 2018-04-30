@@ -59,6 +59,10 @@ SignalProtocolStore.prototype = {
 
         var address = new libsignal.SignalProtocolAddress.fromString(identifier);
 
+        if (!(identityKey instanceof ArrayBuffer)) {
+            identityKey = signalUtil.toArrayBuffer(identityKey);
+        }
+
         var existing = this.get('identityKey' + address.getName());
         this.put('identityKey' + address.getName(), identityKey)
 
