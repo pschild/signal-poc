@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <title>SignalProtocol - Client</title>
+</head>
+<body>
+
+<div>
+    <h2>Registration</h2>
+    <input id="registration-name" />
+    <button id="send-registration-btn">register</button>
+</div>
+
+<div>
+    <h2>Users</h2>
+    <ul id="user-list"></ul>
+</div>
+
+<div id="chat" style="display: none;">
+    <h2>Chat</h2>
+    <div>Recipient: <span id="recipient-name"></span></div>
+    <input id="message" />
+    <button id="send-message-btn">send</button>
+</div>
+
+<script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+<script src="libsignal-protocol.js"></script>
+<script src="signalUtil.js"></script>
+
+<script src="store/InMemorySignalProtocolStore.js"></script>
+<!--<script src="store/BrowserSignalProtocolStore.js"></script>-->
+<!--<script src="localforage.js"></script>-->
+<!--<script src="store/ForageSignalProtocolStore.js"></script>-->
+<script src="Client.js"></script>
+<script src="SignalWrapper.js"></script>
+<script src="Logger.js"></script>
+
+<script>
+    const client = new Client();
+    client.init();
+</script>
+</body>
+</html>
