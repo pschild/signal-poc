@@ -6,6 +6,9 @@ const cors = require('cors');
 const UserManager = require('./UserManager');
 const userManager = new UserManager();
 
+const MessageManager = require('./MessageManager');
+const messageManager = new MessageManager();
+
 const PreKeyManager = require('./PreKeyManager');
 const preKeyManager = new PreKeyManager();
 
@@ -50,7 +53,9 @@ app.get(`/users`, (req, res) => {
 });
 
 app.post(`/message`, (req, res) => {
-    res.json({success: true});
+    messageManager.createMessage(req.body)
+        .then(() => res.json({success: true}))
+        .catch(err => res.json({success: false, message: err}));
 });
 
 app.get(`/message/:userId`, (req, res) => {

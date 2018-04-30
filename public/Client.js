@@ -28,7 +28,10 @@ class Client {
 
         this.$sendMessageButton.addEventListener('click', () => {
             this.encryptMessage(this.$messageField.value)
-                .then(ciphertext => console.log(signalUtil.stringToBase64(ciphertext.body)));
+                .then(ciphertext => {
+                    console.log(ciphertext);
+                    return this.sendMessage(ciphertext);
+                });
         });
     }
 
@@ -129,6 +132,17 @@ class Client {
         let senderSessionCipher = new libsignal.SessionCipher(this.store, this.recipientAddress);
         let messageAsArrayBuffer = signalUtil.toArrayBuffer(rawMessage);
         return senderSessionCipher.encrypt(messageAsArrayBuffer);
+    }
+
+    sendMessage(ciphertext) {
+        return axios({
+            method: 'post',
+            url: 'http://localhost:8081/message',
+            data: {
+                recipientRegistrationId: ciphertext.registrationId,
+                ciphertext: signalUtil.stringToBase64(ciphertext.body)
+            }
+        });
     }
 
 }

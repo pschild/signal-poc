@@ -10,6 +10,7 @@ class Database {
         this.db.serialize(() => {
             this.db.run(`CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY AUTOINCREMENT, name, registrationId, identityKey, pubSignedPreKey, signedPreKeyId, signature)`);
             this.db.run(`CREATE TABLE IF NOT EXISTS preKeys (registrationId, keyId, pubPreKey)`);
+            this.db.run(`CREATE TABLE IF NOT EXISTS messages (id INTEGER PRIMARY KEY AUTOINCREMENT, recipientRegistrationId, ciphertext)`);
         });
     }
     
@@ -117,6 +118,23 @@ class Database {
                     resolve(row);
                 } else {
                     reject(err);
+                }
+            });
+            stmt.finalize();
+        });
+    }
+
+    createMessage(data) {
+        const stmt = this.db.prepare(`INSERT INTO messages (recipientRegistrationId, ciphertext) VALUES ($recipientRegistrationId, $ciphertext)`);
+        return new Promise((resolve, reject) => {
+            stmt.run({
+                $recipientRegistrationId: data.recipientRegistrationId,
+                $ciphertext: data.ciphertext
+            }, (err) => {
+                if (err) {
+                    reject(err);
+                } else {
+                    resolve();
                 }
             });
             stmt.finalize();
