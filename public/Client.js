@@ -15,10 +15,19 @@ class Client {
         this.$sendMessageButton = document.querySelector('#send-message-btn');
         this.$recipientName = document.querySelector('#recipient-name');
 
+        this.$retrieveMessagesButton = document.querySelector('#retrieve-messages-btn');
+
+        this.$clearEverythingButton = document.querySelector('#clear-everything-btn');
+
         this.addEventListeners();
     }
 
     addEventListeners() {
+        this.$clearEverythingButton.addEventListener('click', () => {
+            localStorage.clear();
+            window.location.reload();
+        });
+
         this.$sendRegistrationButton.addEventListener('click', () => {
             const username = this.$registrationNameField.value;
             if (username) {
