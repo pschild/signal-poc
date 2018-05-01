@@ -10,4 +10,8 @@ module.exports = class MessageManager {
         return database.createMessage(data);
     }
 
+    getAllByRegistrationId(registrationId) {
+        return database.getAllMessagesByRegistrationId(registrationId);
+    }
+
 };

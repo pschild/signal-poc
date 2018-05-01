@@ -58,8 +58,10 @@ app.post(`/message`, (req, res) => {
         .catch(err => res.json({success: false, message: err}));
 });
 
-app.get(`/message/:userId`, (req, res) => {
-    res.json({success: true});
+app.get(`/messages/:registrationId`, (req, res) => {
+    messageManager.getAllByRegistrationId(Number.parseInt(req.params.registrationId))
+        .then(messages => res.json(messages))
+        .catch(err => res.json({success: false, message: err}));
 });
 
 app.listen(8081, function () {

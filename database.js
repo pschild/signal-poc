@@ -4,6 +4,9 @@ class Database {
     
     constructor() {
         this.db = new sqlite3.Database('./test.db');
+        /*this.db.on('trace', (sql) => {
+            console.log(sql);
+        });*/
     }
     
     init() {
@@ -135,6 +138,20 @@ class Database {
                     reject(err);
                 } else {
                     resolve();
+                }
+            });
+            stmt.finalize();
+        });
+    }
+
+    getAllMessagesByRegistrationId(registrationId) {
+        const stmt = this.db.prepare(`SELECT * FROM messages WHERE recipientRegistrationId = $registrationId`);
+        return new Promise((resolve, reject) => {
+            stmt.all({$registrationId: registrationId}, (err, rows) => {
+                if (!err && rows) {
+                    resolve(rows);
+                } else {
+                    reject(err);
                 }
             });
             stmt.finalize();

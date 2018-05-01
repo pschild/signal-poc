@@ -25,7 +25,8 @@ class SignalWrapper {
             let registrationId = result[1];
 
             const onetimePrekeyPromises = [];
-            for (let keyId = 0; keyId < 5; keyId++) { // TODO: sind 5 genug?
+            // important to begin at 1 instead of 0, because of libsignal-protocol.js line 36119!
+            for (let keyId = 1; keyId < 6; keyId++) { // TODO: sind 5 genug?
                 onetimePrekeyPromises.push(this.keyHelper.generatePreKey(keyId));
             }
 
