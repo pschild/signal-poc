@@ -144,6 +144,7 @@ class Client {
     }
 
     encryptMessage(rawMessage) {
+        // immer new? oder nur wenn nicht vorhanden
         const sessionCipher = new libsignal.SessionCipher(this.store, this.recipientAddress);
         const messageAsArrayBuffer = signalUtil.toArrayBuffer(rawMessage);
         return sessionCipher.encrypt(messageAsArrayBuffer);
@@ -168,22 +169,29 @@ class Client {
     decryptMessage(message) {
         const ciphertext = signalUtil.base64ToString(message.ciphertext);
 
-        const senderAddress = new libsignal.SignalProtocolAddress('bob', 0); // TODO: make dynamic
+        const senderName = 'bob'; // TODO: make dynamic
+        const senderDeviceId = 0; // TODO: make dynamic
+
+        const senderAddress = new libsignal.SignalProtocolAddress(senderName, senderDeviceId);
+
+        // immer new? oder nur wenn nicht vorhanden
         const sessionCipher = new libsignal.SessionCipher(this.store, senderAddress);
 
-        // Decrypt a PreKeyWhisperMessage by first establishing a new session
-        sessionCipher.decryptPreKeyWhisperMessage(ciphertext, 'binary')
+        this.store.loadSession(`${senderName}.${senderDeviceId}`)
+            .then(session => {
+                if (!session) {
+                    // Decrypt a PreKeyWhisperMessage by first establishing a new session
+                    // The session will be set up automatically by libsignal.
+                    // The information to do that is delivered within the message's ciphertext. (?)
+                    return sessionCipher.decryptPreKeyWhisperMessage(ciphertext, 'binary');
+                } else {
+                    // Decrypt a normal message using an existing session
+                    return sessionCipher.decryptWhisperMessage(ciphertext, 'binary');
+                }
+            })
             .then(plaintext => {
                 console.log(signalUtil.toString(plaintext));
             });
-
-        // Decrypt a normal message using an existing session
-        /*this.retrieveReceiverInfo(2)
-            .then(user => this.createSession(user))
-            .then(() => sessionCipher.decryptWhisperMessage(ciphertext, 'binary'))
-            .then(decrypted => {
-                console.log(signalUtil.toString(decrypted));
-            });*/
     }
 
 }
