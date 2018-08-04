@@ -13,7 +13,7 @@ class Database {
         this.db.serialize(() => {
             this.db.run(`CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY AUTOINCREMENT, name, registrationId, identityKey, pubSignedPreKey, signedPreKeyId, signature)`);
             this.db.run(`CREATE TABLE IF NOT EXISTS preKeys (registrationId, keyId, pubPreKey)`);
-            this.db.run(`CREATE TABLE IF NOT EXISTS messages (id INTEGER PRIMARY KEY AUTOINCREMENT, recipientRegistrationId, ciphertext)`);
+            this.db.run(`CREATE TABLE IF NOT EXISTS messages (id INTEGER PRIMARY KEY AUTOINCREMENT, recipientRegistrationId, body, type)`);
         });
     }
     
@@ -128,11 +128,12 @@ class Database {
     }
 
     createMessage(data) {
-        const stmt = this.db.prepare(`INSERT INTO messages (recipientRegistrationId, ciphertext) VALUES ($recipientRegistrationId, $ciphertext)`);
+        const stmt = this.db.prepare(`INSERT INTO messages (recipientRegistrationId, body, type) VALUES ($recipientRegistrationId, $body, $type)`);
         return new Promise((resolve, reject) => {
             stmt.run({
                 $recipientRegistrationId: data.recipientRegistrationId,
-                $ciphertext: data.ciphertext
+                $body: data.body,
+                $type: data.type
             }, (err) => {
                 if (err) {
                     reject(err);

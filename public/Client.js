@@ -156,7 +156,8 @@ class Client {
             url: 'http://localhost:8081/message',
             data: {
                 recipientRegistrationId: ciphertext.registrationId,
-                ciphertext: signalUtil.stringToBase64(ciphertext.body)
+                body: signalUtil.stringToBase64(ciphertext.body),
+                type: ciphertext.type
             }
         });
     }
@@ -167,7 +168,8 @@ class Client {
     }
 
     decryptMessage(message) {
-        const ciphertext = signalUtil.base64ToString(message.ciphertext);
+        const ciphertext = signalUtil.base64ToString(message.body);
+        const messageType = message.type;
 
         const senderName = 'bob'; // TODO: make dynamic
         const senderDeviceId = 0; // TODO: make dynamic
