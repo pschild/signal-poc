@@ -15,6 +15,7 @@ class Client {
         this.$sendMessageButton = document.querySelector('#send-message-btn');
         this.$recipientName = document.querySelector('#recipient-name');
 
+        this.$messageSenderName = document.querySelector('#message-sender');
         this.$retrieveMessagesButton = document.querySelector('#retrieve-messages-btn');
 
         this.$clearEverythingButton = document.querySelector('#clear-everything-btn');
@@ -101,6 +102,7 @@ class Client {
     openChatForUsername(recipientId, recipientName) {
         this.$chat.style.display = 'block';
         this.$recipientName.innerHTML = recipientName;
+        this.$messageSenderName.value = recipientName;
 
         this.recipientAddress = new libsignal.SignalProtocolAddress(recipientName, 0); // TODO: deviceId is always 0 atm
 
@@ -169,31 +171,31 @@ class Client {
 
     decryptMessage(message) {
         const ciphertext = signalUtil.base64ToString(message.body);
+        console.log('ciphertext', ciphertext);
         const messageType = message.type;
+        console.log('messageType', messageType);
 
-        const senderName = 'bob'; // TODO: make dynamic
+        const senderName = this.$messageSenderName.value; // TODO: make dynamic
         const senderDeviceId = 0; // TODO: make dynamic
 
         const senderAddress = new libsignal.SignalProtocolAddress(senderName, senderDeviceId);
-
-        // immer new? oder nur wenn nicht vorhanden
         const sessionCipher = new libsignal.SessionCipher(this.store, senderAddress);
 
-        this.store.loadSession(`${senderName}.${senderDeviceId}`)
-            .then(session => {
-                if (!session) {
-                    // Decrypt a PreKeyWhisperMessage by first establishing a new session
-                    // The session will be set up automatically by libsignal.
-                    // The information to do that is delivered within the message's ciphertext. (?)
-                    return sessionCipher.decryptPreKeyWhisperMessage(ciphertext, 'binary');
-                } else {
-                    // Decrypt a normal message using an existing session
-                    return sessionCipher.decryptWhisperMessage(ciphertext, 'binary');
-                }
-            })
-            .then(plaintext => {
+        if (messageType === 3) { // 3 = PREKEY_BUNDLE
+            console.log('decryptPreKeyWhisperMessage');
+            // Decrypt a PreKeyWhisperMessage by first establishing a new session
+            // The session will be set up automatically by libsignal.
+            // The information to do that is delivered within the message's ciphertext.
+            return sessionCipher.decryptPreKeyWhisperMessage(ciphertext, 'binary').then(plaintext => {
                 console.log(signalUtil.toString(plaintext));
             });
+        } else {
+            console.log('decryptWhisperMessage');
+            // Decrypt a normal message using an existing session
+            return sessionCipher.decryptWhisperMessage(ciphertext, 'binary').then(plaintext => {
+                console.log(signalUtil.toString(plaintext));
+            });
+        }
     }
 
 }
