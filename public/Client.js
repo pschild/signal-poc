@@ -18,6 +18,7 @@ class Client {
         this.$messageField = document.querySelector('#message');
         this.$sendMessageButton = document.querySelector('#send-message-btn');
         this.$chatPartnerName = document.querySelector('#chat-partner-name');
+        this.$chatHistory = document.querySelector('#chat-history');
 
         this.$retrieveMessagesButton = document.querySelector('#retrieve-messages-btn');
 
@@ -227,14 +228,16 @@ class Client {
             // Decrypt a PreKeyWhisperMessage by first establishing a new session
             // The session will be set up automatically by libsignal.
             // The information to do that is delivered within the message's ciphertext.
-            return sessionCipher.decryptPreKeyWhisperMessage(ciphertext, 'binary').then(plaintext => {
-                console.log(signalUtil.toString(plaintext));
+            return sessionCipher.decryptPreKeyWhisperMessage(ciphertext, 'binary').then(encryptedText => {
+                let plaintext = signalUtil.toString(encryptedText);
+                this.$chatHistory.innerHTML += `<br/>${message.timestamp}: ${plaintext}`;
             });
         } else {
             console.log('decryptWhisperMessage');
             // Decrypt a normal message using an existing session
-            return sessionCipher.decryptWhisperMessage(ciphertext, 'binary').then(plaintext => {
-                console.log(signalUtil.toString(plaintext));
+            return sessionCipher.decryptWhisperMessage(ciphertext, 'binary').then(encryptedText => {
+                let plaintext = signalUtil.toString(encryptedText);
+                this.$chatHistory.innerHTML += `<br/>${message.timestamp}: ${plaintext}`;
             });
         }
     }

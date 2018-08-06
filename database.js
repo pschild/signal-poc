@@ -146,7 +146,7 @@ class Database {
     }
 
     getAllUnreadMessagesByRegistrationId(registrationId) {
-        const stmt = this.db.prepare(`SELECT * FROM messages WHERE recipientRegistrationId = $registrationId AND fetched = 0 ORDER BY timestamp DESC`);
+        const stmt = this.db.prepare(`SELECT * FROM messages WHERE recipientRegistrationId = $registrationId AND fetched = 0 ORDER BY timestamp ASC`);
         return new Promise((resolve, reject) => {
             stmt.all({$registrationId: registrationId}, (err, rows) => {
                 if (!err && rows) {
