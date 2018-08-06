@@ -13,7 +13,7 @@ class Database {
         this.db.serialize(() => {
             this.db.run(`CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY AUTOINCREMENT, name UNIQUE, registrationId, identityKey, pubSignedPreKey, signedPreKeyId, signature)`);
             this.db.run(`CREATE TABLE IF NOT EXISTS preKeys (registrationId, keyId, pubPreKey)`);
-            this.db.run(`CREATE TABLE IF NOT EXISTS messages (id INTEGER PRIMARY KEY AUTOINCREMENT, recipientRegistrationId, body, type)`);
+            this.db.run(`CREATE TABLE IF NOT EXISTS messages (id INTEGER PRIMARY KEY AUTOINCREMENT, recipientRegistrationId, body, type, timestamp DATETIME DEFAULT (datetime('now','localtime')), fetched BOOLEAN NOT NULL DEFAULT 0)`);
         });
     }
     
@@ -145,14 +145,28 @@ class Database {
         });
     }
 
-    getAllMessagesByRegistrationId(registrationId) {
-        const stmt = this.db.prepare(`SELECT * FROM messages WHERE recipientRegistrationId = $registrationId ORDER BY id DESC`);
+    getAllUnreadMessagesByRegistrationId(registrationId) {
+        const stmt = this.db.prepare(`SELECT * FROM messages WHERE recipientRegistrationId = $registrationId AND fetched = 0 ORDER BY timestamp DESC`);
         return new Promise((resolve, reject) => {
             stmt.all({$registrationId: registrationId}, (err, rows) => {
                 if (!err && rows) {
                     resolve(rows);
                 } else {
                     reject(err);
+                }
+            });
+            stmt.finalize();
+        });
+    }
+
+    updateFetchedStatus(messageId) {
+        const stmt = this.db.prepare(`UPDATE messages SET fetched = $fetched WHERE id = $messageId`);
+        return new Promise((resolve, reject) => {
+            stmt.run({$fetched: true, $messageId: messageId}, (err) => {
+                if (err) {
+                    reject(err);
+                } else {
+                    resolve();
                 }
             });
             stmt.finalize();

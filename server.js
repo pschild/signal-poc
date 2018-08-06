@@ -93,8 +93,14 @@ app.post(`/message`, (req, res) => {
 });
 
 app.get(`/messages/:registrationId`, (req, res) => {
-    messageManager.getAllByRegistrationId(Number.parseInt(req.params.registrationId))
-        .then(messages => res.json(messages))
+    let result = [];
+    messageManager.getAllUnreadByRegistrationId(Number.parseInt(req.params.registrationId))
+        .then(messages => {
+            result = messages;
+            let promises = messages.map(message => messageManager.updateFetchedStatus(message.id));
+            return Promise.all(promises);
+        })
+        .then(() => res.json(result))
         .catch(err => res.json({success: false, message: err}));
 });
 

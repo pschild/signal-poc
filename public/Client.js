@@ -51,16 +51,9 @@ class Client {
             this.store.getLocalRegistrationId()
                 .then(registrationId => this.retrieveMessages(registrationId))
                 .then(messages => {
-                    return this.decryptMessage(messages[0]);
+                    let promises = messages.map(message => this.decryptMessage(message));
+                    return Promise.all(promises);
                 });
-                /*.then(messages => {
-                    console.log('decrypting 0th message');
-                    return this.decryptMessage(messages[0])
-                        .then(() => {
-                            console.log('decrypting 1st message');
-                            return this.decryptMessage(messages[1])
-                        });
-                });*/
         });
 
         this.$registerAliceButton.addEventListener('click', () => {
@@ -74,7 +67,6 @@ class Client {
 
     init() {
         this.initializeSocket();
-        this.loadUserList();
     }
 
     initializeSocket() {
