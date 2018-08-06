@@ -1,9 +1,12 @@
 class Client {
 
     constructor() {
+        this.loggedInUser = null;
+
         this.logger = new Logger();
         this.signalWrapper = new SignalWrapper();
         this.store = new SignalProtocolStore();
+        this.chatPartnerAddress = undefined;
 
         this.$registrationNameField = document.querySelector('#registration-name');
         this.$sendRegistrationButton = document.querySelector('#send-registration-btn');
@@ -15,9 +18,8 @@ class Client {
         this.$chat = document.querySelector('#chat');
         this.$messageField = document.querySelector('#message');
         this.$sendMessageButton = document.querySelector('#send-message-btn');
-        this.$recipientName = document.querySelector('#recipient-name');
+        this.$chatPartnerName = document.querySelector('#chat-partner-name');
 
-        this.$messageSenderName = document.querySelector('#message-sender');
         this.$retrieveMessagesButton = document.querySelector('#retrieve-messages-btn');
 
         this.$clearEverythingButton = document.querySelector('#clear-everything-btn');
@@ -72,7 +74,6 @@ class Client {
     }
 
     init() {
-        this.loadUserList();
     }
 
     loadUserList() {
@@ -81,6 +82,10 @@ class Client {
             .then(response => {
                 const users = response.data;
                 users.forEach(user => {
+                    if (this.loggedInUser && user.name === this.loggedInUser.name) {
+                        return;
+                    }
+
                     let listItem = document.createElement('li');
                     let label = document.createTextNode(user.name);
                     listItem.appendChild(label);
@@ -112,21 +117,21 @@ class Client {
             })
             .then(response => {
                 const user = response.data;
-                this.logger.info('registration result', user);
-                this.logger.info('registrationId', user.registrationId);
-                this.logger.info('identityKey', user.identityKey);
+                // this.logger.info('registration result', user);
+                // this.logger.info('registrationId', user.registrationId);
+                // this.logger.info('identityKey', user.identityKey);
+                this.loggedInUser = user;
                 this.loadUserList();
             });
     }
 
-    openChatForUsername(recipientId, recipientName) {
+    openChatForUsername(chatPartnerId, chatPartnerName) {
         this.$chat.style.display = 'block';
-        this.$recipientName.innerHTML = recipientName;
-        this.$messageSenderName.value = recipientName;
+        this.$chatPartnerName.innerHTML = chatPartnerName;
 
-        this.recipientAddress = new libsignal.SignalProtocolAddress(recipientName, 0); // TODO: deviceId is always 0 atm
+        this.chatPartnerAddress = new libsignal.SignalProtocolAddress(chatPartnerName, 0); // TODO: deviceId is always 0 atm
 
-        this.retrieveReceiverInfo(recipientId)
+        this.retrieveReceiverInfo(chatPartnerId)
             .then(user => this.createSession(user));
     }
 
@@ -143,7 +148,7 @@ class Client {
     }
 
     createSession(recipient) {
-        let builder = new libsignal.SessionBuilder(this.store, this.recipientAddress);
+        let builder = new libsignal.SessionBuilder(this.store, this.chatPartnerAddress);
 
         let keyBundle = {
             identityKey: signalUtil.base64ToArrayBuffer(recipient.identityKey), // public!
@@ -167,7 +172,7 @@ class Client {
 
     encryptMessage(rawMessage) {
         // immer new? oder nur wenn nicht vorhanden
-        const sessionCipher = new libsignal.SessionCipher(this.store, this.recipientAddress);
+        const sessionCipher = new libsignal.SessionCipher(this.store, this.chatPartnerAddress);
         const messageAsArrayBuffer = signalUtil.toArrayBuffer(rawMessage);
         return sessionCipher.encrypt(messageAsArrayBuffer);
     }
@@ -195,11 +200,7 @@ class Client {
         const messageType = message.type;
         console.log('messageType', messageType);
 
-        const senderName = this.$messageSenderName.value;
-        const senderDeviceId = 0; // TODO: deviceId is always 0 atm
-
-        const senderAddress = new libsignal.SignalProtocolAddress(senderName, senderDeviceId);
-        const sessionCipher = new libsignal.SessionCipher(this.store, senderAddress);
+        const sessionCipher = new libsignal.SessionCipher(this.store, this.chatPartnerAddress);
 
         if (messageType === 3) { // 3 = PREKEY_BUNDLE
             console.log('decryptPreKeyWhisperMessage');

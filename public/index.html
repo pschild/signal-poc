@@ -15,6 +15,7 @@
     <input id="registration-name" />
     <button id="send-registration-btn">register</button>
     <br/>
+    Shortcuts:
     <button id="register-alice-btn">alice</button>
     <button id="register-bob-btn">bob</button>
 </div>
@@ -26,15 +27,14 @@
 
 <div id="chat" style="display: none;">
     <h2>Chat</h2>
-    <div>Recipient: <span id="recipient-name"></span></div>
+    <div>Active chat with <span id="chat-partner-name"></span></div>
+
+    <div id="messages">
+        <button id="retrieve-messages-btn">get my messages/refresh</button>
+    </div>
+
     <input id="message" />
     <button id="send-message-btn">send</button>
-</div>
-
-<div id="messages">
-    <h2>Messages for me</h2>
-    from <input type="text" id="message-sender"/>
-    <button id="retrieve-messages-btn">get my messages</button>
 </div>
 
 <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
