@@ -1,8 +1,7 @@
 class Client {
 
     constructor() {
-        this.loggedInUser = null;
-
+        this.socket = null;
         this.logger = new Logger();
         this.signalWrapper = new SignalWrapper();
         this.store = new SignalProtocolStore();
@@ -74,6 +73,21 @@ class Client {
     }
 
     init() {
+        this.initializeSocket();
+        this.loadUserList();
+    }
+
+    initializeSocket() {
+        this.socket = io();
+        this.socket.on('new-user-registered', this.loadUserList.bind(this));
+    }
+
+    setLoggedInUser(user) {
+        localStorage.setItem('loggedInUser', JSON.stringify(user));
+    }
+
+    getLoggedInUser() {
+        return JSON.parse(localStorage.getItem('loggedInUser'));
     }
 
     loadUserList() {
@@ -81,8 +95,9 @@ class Client {
         axios({method: 'get', url: `http://localhost:8081/users`})
             .then(response => {
                 const users = response.data;
+                const loggedInUser = this.getLoggedInUser();
                 users.forEach(user => {
-                    if (this.loggedInUser && user.name === this.loggedInUser.name) {
+                    if (loggedInUser && user.name === loggedInUser.name) {
                         return;
                     }
 
@@ -130,8 +145,8 @@ class Client {
                 // this.logger.info('registration result', user);
                 // this.logger.info('registrationId', user.registrationId);
                 // this.logger.info('identityKey', user.identityKey);
-                this.loggedInUser = user;
-                this.loadUserList();
+                this.setLoggedInUser(user);
+                this.socket.emit('set-name', username);
             })
             .catch(e => {
                 alert(e);

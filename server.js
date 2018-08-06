@@ -1,7 +1,10 @@
 const path = require('path');
 const express = require('express');
+const app = express();
 const bodyParser = require('body-parser');
 const cors = require('cors');
+const http = require('http').Server(app);
+const io = require('socket.io')(http);
 
 const UserManager = require('./UserManager');
 const userManager = new UserManager();
@@ -12,11 +15,34 @@ const messageManager = new MessageManager();
 const PreKeyManager = require('./PreKeyManager');
 const preKeyManager = new PreKeyManager();
 
-const app = express();
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({extended: true}));
 app.use(cors());
 app.use(express.static(path.join(__dirname, 'public')));
+
+let connectedUsers = [];
+
+io.sockets.on('connection', socket => {
+    // console.log('connection', socket.id);
+    connectedUsers.push({id: socket.id, socket: socket});
+
+    socket.on('set-name', username => {
+        // console.log('set-name', username);
+        connectedUsers.find(user => user.id === socket.id).name = username;
+        // printConnectedSockets();
+    });
+
+    socket.on('disconnect', () => {
+        // console.log('disconnect', socket.id);
+        connectedUsers = connectedUsers.filter(user => user.id !== socket.id);
+        // printConnectedSockets();
+    });
+});
+
+function printConnectedSockets() {
+    console.log(`ACTIVE USERS: ${connectedUsers.length}`);
+    connectedUsers.map(user => console.log(`id=${user.id}, name=${user.name}`));
+}
 
 // register
 app.post(`/user`, (req, res) => {
@@ -27,6 +53,7 @@ app.post(`/user`, (req, res) => {
             return preKeyManager.createPreKeys(req.body);
         })
         .then(() => res.json({success: true, user: result}))
+        .then(() => connectedUsers.forEach(user => user.socket.emit('new-user-registered')))
         .catch(err => res.json({success: false, message: err}));
 });
 
@@ -71,6 +98,6 @@ app.get(`/messages/:registrationId`, (req, res) => {
         .catch(err => res.json({success: false, message: err}));
 });
 
-app.listen(8081, function () {
+http.listen(8081, function () {
     console.log(`App listening on port 8081!`);
 });
