@@ -26,7 +26,7 @@ app.post(`/user`, (req, res) => {
             result = user;
             return preKeyManager.createPreKeys(req.body);
         })
-        .then(() => res.json(result))
+        .then(() => res.json({success: true, user: result}))
         .catch(err => res.json({success: false, message: err}));
 });
 
@@ -42,6 +42,13 @@ app.get(`/user/:id`, (req, res) => {
             result.preKey = firstPreKey;
             res.json(result);
         })
+        .catch(err => res.json({success: false, message: err}));
+});
+
+// for registration
+app.get(`/user/name/:name`, (req, res) => {
+    userManager.getByName(req.params.name)
+        .then(user => res.json(user))
         .catch(err => res.json({success: false, message: err}));
 });
 

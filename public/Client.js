@@ -99,8 +99,18 @@ class Client {
             });
     }
 
+    getUserByName(username) {
+        return axios({method: 'get', url: `http://localhost:8081/user/name/${username}`})
+            .then(response => {
+                if (response.data) {
+                    throw new Error(`A user with name ${username} already exists.`);
+                }
+            });
+    }
+
     registerUser(username) {
-        this.signalWrapper.generateIdentity(this.store)
+        this.getUserByName(username)
+            .then(() => this.signalWrapper.generateIdentity(this.store))
             .then(() => {
                 const signedKeyId = signalUtil.randomId(); // TODO: besser UUID?
                 return this.signalWrapper.generatePreKeyBundle(this.store, signedKeyId);
@@ -116,12 +126,15 @@ class Client {
                 });
             })
             .then(response => {
-                const user = response.data;
+                const user = response.data.user;
                 // this.logger.info('registration result', user);
                 // this.logger.info('registrationId', user.registrationId);
                 // this.logger.info('identityKey', user.identityKey);
                 this.loggedInUser = user;
                 this.loadUserList();
+            })
+            .catch(e => {
+                alert(e);
             });
     }
 

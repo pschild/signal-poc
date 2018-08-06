@@ -11,7 +11,7 @@ class Database {
     
     init() {
         this.db.serialize(() => {
-            this.db.run(`CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY AUTOINCREMENT, name, registrationId, identityKey, pubSignedPreKey, signedPreKeyId, signature)`);
+            this.db.run(`CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY AUTOINCREMENT, name UNIQUE, registrationId, identityKey, pubSignedPreKey, signedPreKeyId, signature)`);
             this.db.run(`CREATE TABLE IF NOT EXISTS preKeys (registrationId, keyId, pubPreKey)`);
             this.db.run(`CREATE TABLE IF NOT EXISTS messages (id INTEGER PRIMARY KEY AUTOINCREMENT, recipientRegistrationId, body, type)`);
         });
@@ -103,7 +103,7 @@ class Database {
         const stmt = this.db.prepare(`SELECT * FROM users WHERE name = $name`);
         return new Promise((resolve, reject) => {
             stmt.get({$name: name}, (err, row) => {
-                if (!err && row) {
+                if (!err) {
                     resolve(row);
                 } else {
                     reject(err);
