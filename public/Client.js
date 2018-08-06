@@ -7,6 +7,8 @@ class Client {
 
         this.$registrationNameField = document.querySelector('#registration-name');
         this.$sendRegistrationButton = document.querySelector('#send-registration-btn');
+        this.$registerAliceButton = document.querySelector('#register-alice-btn');
+        this.$registerBobButton = document.querySelector('#register-bob-btn');
 
         this.$userList = document.querySelector('#user-list');
 
@@ -47,7 +49,25 @@ class Client {
         this.$retrieveMessagesButton.addEventListener('click', () => {
             this.store.getLocalRegistrationId()
                 .then(registrationId => this.retrieveMessages(registrationId))
-                .then(messages => this.decryptMessage(messages[0]));
+                .then(messages => {
+                    return this.decryptMessage(messages[0]);
+                });
+                /*.then(messages => {
+                    console.log('decrypting 0th message');
+                    return this.decryptMessage(messages[0])
+                        .then(() => {
+                            console.log('decrypting 1st message');
+                            return this.decryptMessage(messages[1])
+                        });
+                });*/
+        });
+
+        this.$registerAliceButton.addEventListener('click', () => {
+            this.registerUser('alice');
+        });
+
+        this.$registerBobButton.addEventListener('click', () => {
+            this.registerUser('bob');
         });
     }
 
@@ -114,11 +134,11 @@ class Client {
         return axios({method: 'get', url: `http://localhost:8081/user/${recipientId}`})
             .then(response => {
                 const user = response.data;
-                this.logger.info('retrieve user result', user);
-                this.logger.info('name', user.name);
-                this.logger.info('registrationId', user.registrationId);
-                this.logger.info('identityKey', user.identityKey);
-                return response.data;
+                // this.logger.info('retrieve user result', user);
+                // this.logger.info('name', user.name);
+                // this.logger.info('registrationId', user.registrationId);
+                // this.logger.info('identityKey', user.identityKey);
+                return user;
             });
     }
 
@@ -175,8 +195,8 @@ class Client {
         const messageType = message.type;
         console.log('messageType', messageType);
 
-        const senderName = this.$messageSenderName.value; // TODO: make dynamic
-        const senderDeviceId = 0; // TODO: make dynamic
+        const senderName = this.$messageSenderName.value;
+        const senderDeviceId = 0; // TODO: deviceId is always 0 atm
 
         const senderAddress = new libsignal.SignalProtocolAddress(senderName, senderDeviceId);
         const sessionCipher = new libsignal.SessionCipher(this.store, senderAddress);

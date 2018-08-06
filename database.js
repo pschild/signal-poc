@@ -146,7 +146,7 @@ class Database {
     }
 
     getAllMessagesByRegistrationId(registrationId) {
-        const stmt = this.db.prepare(`SELECT * FROM messages WHERE recipientRegistrationId = $registrationId`);
+        const stmt = this.db.prepare(`SELECT * FROM messages WHERE recipientRegistrationId = $registrationId ORDER BY id DESC`);
         return new Promise((resolve, reject) => {
             stmt.all({$registrationId: registrationId}, (err, rows) => {
                 if (!err && rows) {
