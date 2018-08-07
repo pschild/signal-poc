@@ -25,6 +25,7 @@ let connectedUsers = [];
 io.sockets.on('connection', socket => {
     // console.log('connection', socket.id);
     connectedUsers.push({id: socket.id, socket: socket});
+    socket.emit('load-user-list');
 
     socket.on('set-name', username => {
         // console.log('set-name', username);

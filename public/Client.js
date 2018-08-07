@@ -26,6 +26,7 @@ class Client {
         this.$clearEverythingButton = document.querySelector('#clear-everything-btn');
 
         this.addEventListeners();
+        this.initializeSocket();
     }
 
     addEventListeners() {
@@ -70,12 +71,9 @@ class Client {
         });
     }
 
-    init() {
-        this.initializeSocket();
-    }
-
     initializeSocket() {
         this.socket = io();
+        this.socket.on('load-user-list', this.loadUserList.bind(this));
         this.socket.on('new-user-registered', this.loadUserList.bind(this));
     }
 
