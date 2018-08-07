@@ -10,8 +10,8 @@ module.exports = class MessageManager {
         return database.createMessage(data);
     }
 
-    getAllUnreadByRegistrationId(registrationId) {
-        return database.getAllUnreadMessagesByRegistrationId(registrationId);
+    getAllUnreadByRegistrationId(sourceRegistrationId, recipientRegistrationId) {
+        return database.getAllUnreadMessagesByRegistrationId(sourceRegistrationId, recipientRegistrationId);
     }
 
     updateFetchedStatus(id) {

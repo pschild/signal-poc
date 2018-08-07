@@ -6,6 +6,7 @@ class Client {
         this.signalWrapper = new SignalWrapper();
         this.store = new SignalProtocolStore();
         this.chatPartnerAddress = undefined;
+        this.chatPartnerRegistrationId = undefined;
 
         this.$registrationNameField = document.querySelector('#registration-name');
         this.$sendRegistrationButton = document.querySelector('#send-registration-btn');
@@ -50,8 +51,11 @@ class Client {
 
         this.$retrieveMessagesButton.addEventListener('click', () => {
             this.store.getLocalRegistrationId()
-                .then(registrationId => this.retrieveMessages(registrationId))
+                .then(myRegistrationId => this.retrieveMessages(this.chatPartnerRegistrationId, myRegistrationId))
                 .then(messages => {
+                    if (!messages) {
+                        // TODO
+                    }
                     let promises = messages.map(message => this.decryptMessage(message));
                     return Promise.all(promises);
                 });
@@ -99,8 +103,13 @@ class Client {
                     listItem.appendChild(label);
                     listItem.dataset.id = user.id;
                     listItem.dataset.name = user.name;
+                    listItem.dataset.registrationId = user.registrationId;
                     listItem.addEventListener('click', (event) => {
-                        this.openChatForUsername(event.target.dataset.id, event.target.dataset.name);
+                        this.openChatForUsername(
+                            event.target.dataset.id,
+                            event.target.dataset.name,
+                            event.target.dataset.registrationId
+                        );
                     });
                     this.$userList.appendChild(listItem);
                 });
@@ -146,11 +155,12 @@ class Client {
             });
     }
 
-    openChatForUsername(chatPartnerId, chatPartnerName) {
+    openChatForUsername(chatPartnerId, chatPartnerName, chatPartnerRegistrationId) {
         this.$chat.style.display = 'block';
         this.$chatPartnerName.innerHTML = chatPartnerName;
 
         this.chatPartnerAddress = new libsignal.SignalProtocolAddress(chatPartnerName, 0); // TODO: deviceId is always 0 atm
+        this.chatPartnerRegistrationId = chatPartnerRegistrationId;
 
         this.retrieveReceiverInfo(chatPartnerId)
             .then(user => this.createSession(user));
@@ -199,10 +209,12 @@ class Client {
     }
 
     sendMessage(ciphertext) {
+        const loggedInUser = this.getLoggedInUser();
         return axios({
             method: 'post',
             url: 'http://localhost:8081/message',
             data: {
+                sourceRegistrationId: loggedInUser.registrationId,
                 recipientRegistrationId: ciphertext.registrationId,
                 body: signalUtil.stringToBase64(ciphertext.body),
                 type: ciphertext.type
@@ -210,8 +222,8 @@ class Client {
         });
     }
 
-    retrieveMessages(registrationId) {
-        return axios({method: 'get', url: `http://localhost:8081/messages/${registrationId}`})
+    retrieveMessages(sourceRegistrationId, recipientRegistrationId) {
+        return axios({method: 'get', url: `http://localhost:8081/messages/${sourceRegistrationId}/${recipientRegistrationId}`})
             .then(response => response.data);
     }
 

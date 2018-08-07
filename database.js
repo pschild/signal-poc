@@ -3,7 +3,7 @@ const sqlite3 = require('sqlite3').verbose();
 class Database {
     
     constructor() {
-        this.db = new sqlite3.Database('./test.db');
+        this.db = new sqlite3.Database('./chat.db');
         /*this.db.on('trace', (sql) => {
             console.log(sql);
         });*/
@@ -11,14 +11,48 @@ class Database {
     
     init() {
         this.db.serialize(() => {
-            this.db.run(`CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY AUTOINCREMENT, name UNIQUE, registrationId, identityKey, pubSignedPreKey, signedPreKeyId, signature)`);
-            this.db.run(`CREATE TABLE IF NOT EXISTS preKeys (registrationId, keyId, pubPreKey)`);
-            this.db.run(`CREATE TABLE IF NOT EXISTS messages (id INTEGER PRIMARY KEY AUTOINCREMENT, recipientRegistrationId, body, type, timestamp DATETIME DEFAULT (datetime('now','localtime')), fetched BOOLEAN NOT NULL DEFAULT 0)`);
+            this.db.run(`
+                CREATE TABLE IF NOT EXISTS users
+                (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    name UNIQUE,
+                    registrationId,
+                    identityKey,
+                    pubSignedPreKey,
+                    signedPreKeyId,
+                    signature
+                )
+            `);
+            this.db.run(`
+                CREATE TABLE IF NOT EXISTS preKeys
+                (
+                    registrationId,
+                    keyId,
+                    pubPreKey
+                )
+            `);
+            this.db.run(`
+                CREATE TABLE IF NOT EXISTS messages
+                (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    sourceRegistrationId,
+                    recipientRegistrationId,
+                    body,
+                    type,
+                    timestamp DATETIME DEFAULT (datetime('now','localtime')),
+                    fetched BOOLEAN NOT NULL DEFAULT 0
+                )
+            `);
         });
     }
     
     createUser(data) {
-        const stmt = this.db.prepare(`INSERT INTO users (name, registrationId, identityKey, pubSignedPreKey, signedPreKeyId, signature) VALUES ($name, $registrationId, $identityKey, $pubSignedPreKey, $signKeyId, $signature)`);
+        const stmt = this.db.prepare(`
+            INSERT INTO users
+            (name, registrationId, identityKey, pubSignedPreKey, signedPreKeyId, signature)
+            VALUES
+            ($name, $registrationId, $identityKey, $pubSignedPreKey, $signKeyId, $signature)
+        `);
         return new Promise((resolve, reject) => {
             stmt.run({
                 $name: data.username,
@@ -128,9 +162,15 @@ class Database {
     }
 
     createMessage(data) {
-        const stmt = this.db.prepare(`INSERT INTO messages (recipientRegistrationId, body, type) VALUES ($recipientRegistrationId, $body, $type)`);
+        const stmt = this.db.prepare(`
+            INSERT INTO messages
+            (sourceRegistrationId ,recipientRegistrationId, body, type)
+            VALUES
+            ($sourceRegistrationId, $recipientRegistrationId, $body, $type)
+        `);
         return new Promise((resolve, reject) => {
             stmt.run({
+                $sourceRegistrationId: data.sourceRegistrationId,
                 $recipientRegistrationId: data.recipientRegistrationId,
                 $body: data.body,
                 $type: data.type
@@ -145,10 +185,19 @@ class Database {
         });
     }
 
-    getAllUnreadMessagesByRegistrationId(registrationId) {
-        const stmt = this.db.prepare(`SELECT * FROM messages WHERE recipientRegistrationId = $registrationId AND fetched = 0 ORDER BY timestamp ASC`);
+    getAllUnreadMessagesByRegistrationId(sourceRegistrationId, recipientRegistrationId) {
+        const stmt = this.db.prepare(`
+            SELECT * FROM messages
+            WHERE sourceRegistrationId = $sourceRegistrationId
+            AND recipientRegistrationId = $recipientRegistrationId
+            AND fetched = 0
+            ORDER BY timestamp ASC
+        `);
         return new Promise((resolve, reject) => {
-            stmt.all({$registrationId: registrationId}, (err, rows) => {
+            stmt.all({
+                $sourceRegistrationId: sourceRegistrationId,
+                $recipientRegistrationId: recipientRegistrationId
+            }, (err, rows) => {
                 if (!err && rows) {
                     resolve(rows);
                 } else {

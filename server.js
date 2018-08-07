@@ -92,9 +92,11 @@ app.post(`/message`, (req, res) => {
         .catch(err => res.json({success: false, message: err}));
 });
 
-app.get(`/messages/:registrationId`, (req, res) => {
+app.get(`/messages/:sourceRegistrationId/:recipientRegistrationId`, (req, res) => {
     let result = [];
-    messageManager.getAllUnreadByRegistrationId(Number.parseInt(req.params.registrationId))
+    let sourceRegistrationId = Number.parseInt(req.params.sourceRegistrationId);
+    let recipientRegistrationId = Number.parseInt(req.params.recipientRegistrationId);
+    messageManager.getAllUnreadByRegistrationId(sourceRegistrationId, recipientRegistrationId)
         .then(messages => {
             result = messages;
             let promises = messages.map(message => messageManager.updateFetchedStatus(message.id));
