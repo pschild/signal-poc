@@ -208,13 +208,18 @@ class Client {
 
     sendMessage(ciphertext) {
         const loggedInUser = this.getLoggedInUser();
+
+        // String -> ArrayBuffer -> Base64
+        let asArrayBuffer = signalUtil.toArrayBuffer(ciphertext.body);
+        let asBase64 = signalUtil.arrayBufferToBase64(asArrayBuffer);
+
         return axios({
             method: 'post',
             url: 'http://localhost:8081/message',
             data: {
                 sourceRegistrationId: loggedInUser.registrationId,
                 recipientRegistrationId: ciphertext.registrationId,
-                body: signalUtil.stringToBase64(ciphertext.body),
+                body: asBase64,
                 type: ciphertext.type
             }
         });
@@ -226,10 +231,9 @@ class Client {
     }
 
     decryptMessage(message) {
-        const ciphertext = signalUtil.base64ToString(message.body);
-        console.log('ciphertext', ciphertext);
+        // Base64 -> ArrayBuffer -> String
+        const ciphertext = signalUtil.base64ToArrayBuffer(message.body);
         const messageType = message.type;
-        console.log('messageType', messageType);
 
         const sessionCipher = new libsignal.SessionCipher(this.store, this.chatPartnerAddress);
 
